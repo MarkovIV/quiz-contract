@@ -102,12 +102,12 @@ contract QuizContract {
         string memory _proof
     ) public {
         require(
-            quizes[_quizID].quizOwner == msg.sender,
-            "You're not a quiz owner"
-        );
-        require(
             quizes[_quizID].responder != address(0),
             "The quiz did not take place"
+        );
+        require(
+            quizes[_quizID].quizOwner == msg.sender,
+            "You're not a quiz owner"
         );
         require(
             (quizes[_quizID].startedAt + quizes[_quizID].guessingPeriod) <=
@@ -282,10 +282,7 @@ contract QuizContract {
     }
 
     modifier onlyOwner() {
-        require(
-            msg.sender == owner,
-            "Error! You're not the smart contract owner!"
-        );
+        require(msg.sender == owner, "You're not the contract owner!");
         _;
     }
 
