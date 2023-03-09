@@ -11,20 +11,23 @@ describe("QuizContract", function () {
 		let contractOwnerBalance
 		let myQuizContract
 		let quizOwner
-		let guessingPeriod, proofPeriod
-		let proofHash
-		let maxAttempt
-		let interval
-		let attemptCost
-		let bid
 		let bank
-		let secret
-		let proof
 		let startedAt
 		let responder
-		let answer1, answer2
 		const comission = 1
 		const provider = ethers.provider
+		const guessingPeriod = 180
+		const proofPeriod = 120
+		const maxAttempt = 3
+		const interval = 10
+		const attemptCost = 100
+		const bid = 1000
+		const secret = 5
+		const proof = "proof string"
+		const proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
+		const answer1 = 1
+		const answer2 = 2
+		const answer3 = 3
 
 		it("Contract should be successfully deployed, account 0 is owner, comission is correct and quizes counter is zero", async function () {
 			accounts = await ethers.getSigners()
@@ -44,21 +47,11 @@ describe("QuizContract", function () {
 		})
 
 		it("Hash calculated correctly", async function() {
-			secret = 5
-			proof = "proof string"
-			proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
-
 			expect(await myQuizContract.calculateHash(secret, proof)).to.equal(proofHash)
 		})
 
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
-			guessingPeriod = 180
-			proofPeriod = 120
-			maxAttempt = 2
-			interval = 10
-			attemptCost = 100
-			bid = 1000
 
 			const ownersComission = Math.floor((comission * bid) / 100)
 			contractOwnerBalance = ownersComission
@@ -118,7 +111,6 @@ describe("QuizContract", function () {
 		})
 
 		it("The quiz has a correct bank", async function() {
-
 			const ownersComission = await myQuizContract.connect(contractOwner).showComission()
 
 			expect(await myQuizContract.getQuizBank(0)).to.equal(bid - ownersComission)	
@@ -138,7 +130,6 @@ describe("QuizContract", function () {
 
 		it("Account 2 sent the first reply, but indicated incorrect quiz number", async function() {
 			responder = accounts[2]
-			answer1 = 1
 			let pay = attemptCost
 
 			await expect(myQuizContract.connect(responder).solveQuiz(
@@ -164,8 +155,6 @@ describe("QuizContract", function () {
 				answer1,
 				{ value: attemptCost }
 			)
-
-			const timestamp = await getTimestamp(tx.blockNumber)
 
 			await expect(() => tx)
 			.to.emit(myQuizContract, "answerAdded")
@@ -209,15 +198,29 @@ describe("QuizContract", function () {
 			)).to.be.revertedWith("Proof time isn't started")
 		})
 
-		it("Respondent is trying to send his reply when answers time is ended", async function() {
-			answer2 = 2
+		it("Responder sent the second reply correctly", async function() {
+			const tx = await myQuizContract.connect(responder).solveQuiz(
+				0,
+				answer2,
+				{ value: attemptCost }
+			)
 
+			await expect(() => tx)
+			.to.emit(myQuizContract, "answerAdded")
+			.withArgs(0, answer2)
+
+			const ownersComission = Math.floor((comission * attemptCost) / 100)
+			contractOwnerBalance += ownersComission
+			bank += attemptCost - ownersComission
+		})
+
+		it("Respondent is trying to send his reply when answers time is ended", async function() {
 			await network.provider.send("evm_increaseTime", [guessingPeriod])
 			await network.provider.send("evm_mine")
 
 			await expect(myQuizContract.connect(responder).solveQuiz(
 				0,
-				answer2,
+				answer3,
 				{ value: attemptCost }
 			)).to.be.revertedWith("Answers time is ended")
 		})
@@ -254,14 +257,17 @@ describe("QuizContract", function () {
 			)).to.be.revertedWith("The proof isn't true")
 		})
 
+		it("The quiz owner is trying to get prize without sending the proof", async function() {
+			await expect(myQuizContract.connect(quizOwner).getQuizOwnerPrize(0))
+			.to.be.revertedWith("You are not a winner")
+		})
+
 		it("Correct proof", async function() {
 			const tx = await myQuizContract.connect(quizOwner).proofQuiz(
 				0,
 				secret,
 				proof
 			)
-
-			const timestamp = await getTimestamp(tx.blockNumber)
 
 			await expect(() => tx)
 			.to.emit(myQuizContract, "proofAdded")
@@ -337,19 +343,199 @@ describe("QuizContract", function () {
 	})
 
 	describe("Variant 2 - The responder guesses the number and takes the prize", function () {
+		let accounts
+		let myQuizContract
+		let quizOwner
+		let bank
+		let responder
+		const comission = 1
+		const guessingPeriod = 180
+		const proofPeriod = 120
+		const interval = 10
+		const attemptCost = 100
+		const bid = 1000
+		const maxAttempt = 1
+		const secret = 5
+		const proof = "proof string"
+		const proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
+		const answer1 = 5
+		const answer2 = 3
 
+		it("Contract should be successfully deployed", async function () {
+			accounts = await ethers.getSigners()
+			const QuizContract = await ethers.getContractFactory("QuizContract")
+			myQuizContract = await QuizContract.deploy(comission)
+			await myQuizContract.deployed()
+			expect(myQuizContract.address).to.be.properAddress
+		})
 
+		it("Account 1 starts the quiz", async function() {
+			quizOwner = accounts[1]
+
+			const ownersComission = Math.floor((comission * bid) / 100)
+			bank = bid - ownersComission
+			
+			const tx = await myQuizContract.connect(quizOwner).startQuiz(
+				guessingPeriod,
+				proofPeriod,
+				proofHash,
+				maxAttempt,
+				interval,
+				attemptCost,
+				{ value: bid }
+			)
+
+			expect(await myQuizContract.counter()).to.equal(1)
+		})
+
+		it("Account 2 sent the first reply, which solved the quiz", async function() {
+			responder = accounts[2]
+
+			const tx = await myQuizContract.connect(responder).solveQuiz(
+				0,
+				answer1,
+				{ value: attemptCost }
+			)
+
+			await expect(() => tx)
+			.to.emit(myQuizContract, "answerAdded")
+			.withArgs(0, answer1)
+
+			const ownersComission = Math.floor((comission * attemptCost) / 100)
+			bank += attemptCost - ownersComission
+		})
+
+		it("Responder is trying to send the next answer, but number of attempts exceeded", async function() {
+			await expect(myQuizContract.connect(responder).solveQuiz(
+				0,
+				answer2,
+				{ value: attemptCost }
+			)).to.be.revertedWith("Number of tries out")
+		})
+
+		it("The owner of the quiz sent proof", async function() {
+			await network.provider.send("evm_increaseTime", [guessingPeriod])
+			await network.provider.send("evm_mine")
+
+			await expect(myQuizContract.connect(quizOwner).proofQuiz(
+				0,
+				secret,
+				proof
+			)).to.be.revertedWith("The quiz is solved")
+		})
+
+		it("Responder got his prize", async function() {
+			await network.provider.send("evm_increaseTime", [proofPeriod])
+			await network.provider.send("evm_mine")
+
+			const tx = await myQuizContract.connect(responder).getResponderPrize(0)
+
+			const timestamp = await getTimestamp(tx.blockNumber)
+
+			await expect(() => tx)
+			.to.emit(myQuizContract, "quizEnded")
+			.withArgs(0, timestamp)
+
+			await expect(() => tx)
+			.to.changeEtherBalances([myQuizContract, responder], [-bank, bank])
+
+			expect(await myQuizContract.getQuizBank(0)).to.equal(0)
+			expect(await myQuizContract.getQuizStatus(0)).to.equal(false)
+		})
 	})
 
 	describe("Variant 3 - The responder does not guess the number, but the quiz owner does not send the proof in the time and the responder takes the prize", function () {
+		let accounts
+		let myQuizContract
+		let quizOwner
+		let bank
+		let responder
+		const comission = 1
+		const guessingPeriod = 180
+		const proofPeriod = 120
+		const interval = 10
+		const attemptCost = 100
+		const bid = 1000
+		const maxAttempt = 1
+		const secret = 5
+		const proof = "proof string"
+		const proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
+		const answer1 = 3
 
+		it("Contract should be successfully deployed", async function () {
+			accounts = await ethers.getSigners()
+			const QuizContract = await ethers.getContractFactory("QuizContract")
+			myQuizContract = await QuizContract.deploy(comission)
+			await myQuizContract.deployed()
+			expect(myQuizContract.address).to.be.properAddress
+		})
 
+		it("Account 1 starts the quiz", async function() {
+			quizOwner = accounts[1]
+
+			const ownersComission = Math.floor((comission * bid) / 100)
+			bank = bid - ownersComission
+			
+			const tx = await myQuizContract.connect(quizOwner).startQuiz(
+				guessingPeriod,
+				proofPeriod,
+				proofHash,
+				maxAttempt,
+				interval,
+				attemptCost,
+				{ value: bid }
+			)
+
+			expect(await myQuizContract.counter()).to.equal(1)
+		})
+
+		it("Account 2 sent the reply, which doesn't solve the quiz", async function() {
+			responder = accounts[2]
+
+			const tx = await myQuizContract.connect(responder).solveQuiz(
+				0,
+				answer1,
+				{ value: attemptCost }
+			)
+
+			await expect(() => tx)
+			.to.emit(myQuizContract, "answerAdded")
+			.withArgs(0, answer1)
+
+			const ownersComission = Math.floor((comission * attemptCost) / 100)
+			bank += attemptCost - ownersComission
+		})
+
+		it("The owner of the quiz sent proof too late", async function() {
+			await network.provider.send("evm_increaseTime", [guessingPeriod + proofPeriod])
+			await network.provider.send("evm_mine")
+
+			await expect(myQuizContract.connect(quizOwner).proofQuiz(
+				0,
+				secret,
+				proof
+			)).to.be.revertedWith("Proof time is ended")
+		})
+
+		it("Responder got his prize", async function() {
+			const tx = await myQuizContract.connect(responder).getResponderPrize(0)
+
+			const timestamp = await getTimestamp(tx.blockNumber)
+
+			await expect(() => tx)
+			.to.emit(myQuizContract, "quizEnded")
+			.withArgs(0, timestamp)
+
+			await expect(() => tx)
+			.to.changeEtherBalances([myQuizContract, responder], [-bank, bank])
+
+			expect(await myQuizContract.getQuizBank(0)).to.equal(0)
+			expect(await myQuizContract.getQuizStatus(0)).to.equal(false)
+		})
 	})
 
 	describe("Variant 4 - The responder is not located, the owner of the game takes his bet", function () {
 		let accounts
-		let contractOwner
-		let contractOwnerBalance
 		let myQuizContract
 		let quizOwner
 		let guessingPeriod, proofPeriod
@@ -363,7 +549,6 @@ describe("QuizContract", function () {
 
 		it("Contract should be successfully deployed", async function () {
 			accounts = await ethers.getSigners()
-			contractOwner = accounts[0]
 			const QuizContract = await ethers.getContractFactory("QuizContract")
 			myQuizContract = await QuizContract.deploy(comission)
 			await myQuizContract.deployed()
@@ -381,7 +566,6 @@ describe("QuizContract", function () {
 			bid = 1000
 
 			const ownersComission = Math.floor((comission * bid) / 100)
-			contractOwnerBalance = ownersComission
 			bank = bid - ownersComission
 			
 			const tx = await myQuizContract.connect(quizOwner).startQuiz(
@@ -397,7 +581,7 @@ describe("QuizContract", function () {
 			expect(await myQuizContract.counter()).to.equal(1)
 		})
 
-		it("Respondent is trying to send his reply when answers time is ended", async function() {
+		it("Responder isn't located and quiz owner return his bid", async function() {
 			await network.provider.send("evm_increaseTime", [guessingPeriod])
 			await network.provider.send("evm_mine")
 
