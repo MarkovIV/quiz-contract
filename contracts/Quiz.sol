@@ -3,23 +3,23 @@ pragma solidity 0.8.17;
 
 contract QuizContract {
     struct Quiz {
-        uint256 startedAt; // время начала игры
-        uint256 guessingPeriod; // период на разгадку числа
-        uint256 proofPeriod; // период для доказательства загаданного числа
-        address quizOwner; // игрок, загадавший число
-        uint256 bid; // ставка игрока, загадавшего число
-        bytes32 proofHash; // хэш для конкатенации "доказательство загаданного числа" + загаданное число
-        uint256 maxAttempt; // максимальное число попыток ответа
-        uint256 interval; // интервал, в котором загадано число (например, значение 100 определяет, что загадано число от 0 до 99)
-        uint256 attemptCost; // стоимость попытки ответа
-        uint256 secret; // загаданное число
-        address winner; // победитель
-        uint256 bank; // общий банк за вычетом комиссии площадки (начальная ставка игрока, загадавшего число, плюс стоимости всех вариантов ответа, данных отгадывающим игроком)
-        address responder; // игрок, отгадывающий число
-        uint256 currentAttempt; // число данных вариантов ответа
-        mapping(uint256 => uint256) variants; // варианты ответа
-        string proof; // доказательство для загаданного числа
-        bool status; // статус игры: true - активна (игра активна, пока победитель не заберет банк), false - завершена
+        uint256 startedAt; // game start time
+        uint256 guessingPeriod; // period for guessing the number
+        uint256 proofPeriod; // period to prove the hidden number
+        address quizOwner; // quiz owner
+        uint256 bid; // the bet of the player who guessed the number
+        bytes32 proofHash; // hash to concatenate "proof of hidden number" + hidden number
+        uint256 maxAttempt; // maximum number of response attempts
+        uint256 interval; // the interval in which the number is guessed (for example, a value of 100 indicates that a number from 0 to 99 is guessed)
+        uint256 attemptCost; // cost of an attempt to answer
+        uint256 secret; // hidden number
+        address winner; // winner
+        uint256 bank; // the total bank minus the site commission (the initial bet of the player who guessed the number, plus the cost of all answer options given by the guessing player)
+        address responder; // responder
+        uint256 currentAttempt; // number of response options given
+        mapping(uint256 => uint256) variants; // answer options
+        string proof; // proof for the hidden number
+        bool status; // game status: true - active (the game is active until the winner takes the pot), false - completed
     }
 
     address public owner; // владелец контракта

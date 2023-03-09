@@ -538,14 +538,15 @@ describe("QuizContract", function () {
 		let accounts
 		let myQuizContract
 		let quizOwner
-		let guessingPeriod, proofPeriod
-		let proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
-		let maxAttempt
-		let interval
-		let attemptCost
-		let bid
 		let bank
 		const comission = 1
+		const guessingPeriod = 180
+		const proofPeriod = 120
+		const maxAttempt = 2
+		const interval = 10
+		const attemptCost = 100
+		const bid = 1000
+		const proofHash = "0x69d6366c29581462e386100a108047308f03716222796a8bf2ab7ea26e7eec5e"
 
 		it("Contract should be successfully deployed", async function () {
 			accounts = await ethers.getSigners()
@@ -558,12 +559,6 @@ describe("QuizContract", function () {
 
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
-			guessingPeriod = 180
-			proofPeriod = 120
-			maxAttempt = 2
-			interval = 10
-			attemptCost = 100
-			bid = 1000
 
 			const ownersComission = Math.floor((comission * bid) / 100)
 			bank = bid - ownersComission
