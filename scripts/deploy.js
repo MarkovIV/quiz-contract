@@ -1,13 +1,17 @@
-// const { ethers, upgrades } = require("hardhat")
+const { ethers } = require("hardhat")
 
-// async function main() {
-//     const BeeV1 = await ethers.getContractFactory("BeeV1")
-//     console.log("Deploying Bee...")
-//     const box = await upgrades.deployProxy(BeeV1, [], {
-//         initializer: "initialize",
-//     })
-//     await box.deployed()
-//     console.log("Bee deployed to:", box.address)
-// }
+async function main() {
+	const commission = 1
+    const QuizContract = await ethers.getContractFactory("QuizContract")
+    console.log("Deploying QuizContract...")
+    const quizContract = await QuizContract.deploy(commission)
+    await quizContract.deployed()
+    console.log("QuizContract deployed to:", quizContract.address)
+}
 
-// main()
+main()
+.catch( error => {
+	console.error(error)
+	process.exitCode = 1
+})
+

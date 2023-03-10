@@ -14,7 +14,7 @@ describe("QuizContract", function () {
 		let bank
 		let startedAt
 		let responder
-		const comission = 1
+		const commission = 1
 		const provider = ethers.provider
 		const guessingPeriod = 180
 		const proofPeriod = 120
@@ -29,20 +29,20 @@ describe("QuizContract", function () {
 		const answer2 = 2
 		const answer3 = 3
 
-		it("Contract should be successfully deployed, account 0 is owner, comission is correct and quizes counter is zero", async function () {
+		it("Contract should be successfully deployed, account 0 is owner, commission is correct and quizes counter is zero", async function () {
 			accounts = await ethers.getSigners()
 			contractOwner = accounts[0]
 			const QuizContract = await ethers.getContractFactory("QuizContract")
-			myQuizContract = await QuizContract.deploy(comission)
+			myQuizContract = await QuizContract.deploy(commission)
 			await myQuizContract.deployed()
 			expect(myQuizContract.address).to.be.properAddress
 			expect(await myQuizContract.owner()).to.equal(contractOwner.address)
-			expect(await myQuizContract.comission()).to.equal(comission)
+			expect(await myQuizContract.commission()).to.equal(commission)
 			expect(await myQuizContract.counter()).to.equal(0)
 		})
 
 		it("After contract deployment owner's and contract's balances are zero", async function() {
-			expect(await myQuizContract.showComission()).to.equal(0)
+			expect(await myQuizContract.showCommission()).to.equal(0)
 			expect(await provider.getBalance(myQuizContract.address)).to.equal(0)
 		})
 
@@ -53,9 +53,9 @@ describe("QuizContract", function () {
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
 
-			const ownersComission = Math.floor((comission * bid) / 100)
-			contractOwnerBalance = ownersComission
-			bank = bid - ownersComission
+			const ownersCommission = Math.floor((commission * bid) / 100)
+			contractOwnerBalance = ownersCommission
+			bank = bid - ownersCommission
 			
 			const tx = await myQuizContract.connect(quizOwner).startQuiz(
 				guessingPeriod,
@@ -74,7 +74,7 @@ describe("QuizContract", function () {
 			.withArgs(0, startedAt)
 
 			expect(await myQuizContract.counter()).to.equal(1)
-			expect(await myQuizContract.connect(contractOwner).showComission()).to.equal(contractOwnerBalance)
+			expect(await myQuizContract.connect(contractOwner).showCommission()).to.equal(contractOwnerBalance)
 			expect(await provider.getBalance(myQuizContract.address)).to.equal(bid)	
 		})
 
@@ -111,9 +111,9 @@ describe("QuizContract", function () {
 		})
 
 		it("The quiz has a correct bank", async function() {
-			const ownersComission = await myQuizContract.connect(contractOwner).showComission()
+			const ownersCommission = await myQuizContract.connect(contractOwner).showCommission()
 
-			expect(await myQuizContract.getQuizBank(0)).to.equal(bid - ownersComission)	
+			expect(await myQuizContract.getQuizBank(0)).to.equal(bid - ownersCommission)	
 		})
 
 		it("The quiz has a correct status", async function() {
@@ -125,7 +125,7 @@ describe("QuizContract", function () {
 		})
 
 		it("Only the owner of the contract can see his commission", async function() {
-			await expect(myQuizContract.connect(quizOwner).showComission()).to.be.revertedWith("You're not the contract owner!")
+			await expect(myQuizContract.connect(quizOwner).showCommission()).to.be.revertedWith("You're not the contract owner!")
 		})
 
 		it("Account 2 sent the first reply, but indicated incorrect quiz number", async function() {
@@ -160,11 +160,11 @@ describe("QuizContract", function () {
 			.to.emit(myQuizContract, "answerAdded")
 			.withArgs(0, answer1)
 
-			const ownersComission = Math.floor((comission * attemptCost) / 100)
-			contractOwnerBalance += ownersComission
-			bank += attemptCost - ownersComission
+			const ownersCommission = Math.floor((commission * attemptCost) / 100)
+			contractOwnerBalance += ownersCommission
+			bank += attemptCost - ownersCommission
 
-			expect(await myQuizContract.connect(contractOwner).showComission()).to.equal(contractOwnerBalance)
+			expect(await myQuizContract.connect(contractOwner).showCommission()).to.equal(contractOwnerBalance)
 			expect(await myQuizContract.getQuizBank(0)).to.equal(bank)
 		})
 
@@ -209,9 +209,9 @@ describe("QuizContract", function () {
 			.to.emit(myQuizContract, "answerAdded")
 			.withArgs(0, answer2)
 
-			const ownersComission = Math.floor((comission * attemptCost) / 100)
-			contractOwnerBalance += ownersComission
-			bank += attemptCost - ownersComission
+			const ownersCommission = Math.floor((commission * attemptCost) / 100)
+			contractOwnerBalance += ownersCommission
+			bank += attemptCost - ownersCommission
 		})
 
 		it("Respondent is trying to send his reply when answers time is ended", async function() {
@@ -328,16 +328,16 @@ describe("QuizContract", function () {
 		})
 
 		it("The owner of the contract withdraw his commission", async function() {
-			const tx = await myQuizContract.connect(contractOwner).withdrawComission()
+			const tx = await myQuizContract.connect(contractOwner).withdrawCommission()
 
 			await expect(() => tx)
 			.to.changeEtherBalances([myQuizContract, contractOwner], [-contractOwnerBalance, contractOwnerBalance])
 
-			expect(await myQuizContract.showComission()).to.equal(0)
+			expect(await myQuizContract.showCommission()).to.equal(0)
 		})
 
 		it("Not the owner of the contract is trying to withdraw commission", async function() {
-			await expect(myQuizContract.connect(responder).withdrawComission())
+			await expect(myQuizContract.connect(responder).withdrawCommission())
 			.to.be.revertedWith("You're not the contract owner!")		
 		})
 	})
@@ -348,7 +348,7 @@ describe("QuizContract", function () {
 		let quizOwner
 		let bank
 		let responder
-		const comission = 1
+		const commission = 1
 		const guessingPeriod = 180
 		const proofPeriod = 120
 		const interval = 10
@@ -364,7 +364,7 @@ describe("QuizContract", function () {
 		it("Contract should be successfully deployed", async function () {
 			accounts = await ethers.getSigners()
 			const QuizContract = await ethers.getContractFactory("QuizContract")
-			myQuizContract = await QuizContract.deploy(comission)
+			myQuizContract = await QuizContract.deploy(commission)
 			await myQuizContract.deployed()
 			expect(myQuizContract.address).to.be.properAddress
 		})
@@ -372,8 +372,8 @@ describe("QuizContract", function () {
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
 
-			const ownersComission = Math.floor((comission * bid) / 100)
-			bank = bid - ownersComission
+			const ownersCommission = Math.floor((commission * bid) / 100)
+			bank = bid - ownersCommission
 			
 			const tx = await myQuizContract.connect(quizOwner).startQuiz(
 				guessingPeriod,
@@ -401,8 +401,8 @@ describe("QuizContract", function () {
 			.to.emit(myQuizContract, "answerAdded")
 			.withArgs(0, answer1)
 
-			const ownersComission = Math.floor((comission * attemptCost) / 100)
-			bank += attemptCost - ownersComission
+			const ownersCommission = Math.floor((commission * attemptCost) / 100)
+			bank += attemptCost - ownersCommission
 		})
 
 		it("Responder is trying to send the next answer, but number of attempts exceeded", async function() {
@@ -450,7 +450,7 @@ describe("QuizContract", function () {
 		let quizOwner
 		let bank
 		let responder
-		const comission = 1
+		const commission = 1
 		const guessingPeriod = 180
 		const proofPeriod = 120
 		const interval = 10
@@ -465,7 +465,7 @@ describe("QuizContract", function () {
 		it("Contract should be successfully deployed", async function () {
 			accounts = await ethers.getSigners()
 			const QuizContract = await ethers.getContractFactory("QuizContract")
-			myQuizContract = await QuizContract.deploy(comission)
+			myQuizContract = await QuizContract.deploy(commission)
 			await myQuizContract.deployed()
 			expect(myQuizContract.address).to.be.properAddress
 		})
@@ -473,8 +473,8 @@ describe("QuizContract", function () {
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
 
-			const ownersComission = Math.floor((comission * bid) / 100)
-			bank = bid - ownersComission
+			const ownersCommission = Math.floor((commission * bid) / 100)
+			bank = bid - ownersCommission
 			
 			const tx = await myQuizContract.connect(quizOwner).startQuiz(
 				guessingPeriod,
@@ -502,8 +502,8 @@ describe("QuizContract", function () {
 			.to.emit(myQuizContract, "answerAdded")
 			.withArgs(0, answer1)
 
-			const ownersComission = Math.floor((comission * attemptCost) / 100)
-			bank += attemptCost - ownersComission
+			const ownersCommission = Math.floor((commission * attemptCost) / 100)
+			bank += attemptCost - ownersCommission
 		})
 
 		it("The owner of the quiz sent proof too late", async function() {
@@ -539,7 +539,7 @@ describe("QuizContract", function () {
 		let myQuizContract
 		let quizOwner
 		let bank
-		const comission = 1
+		const commission = 1
 		const guessingPeriod = 180
 		const proofPeriod = 120
 		const maxAttempt = 2
@@ -551,7 +551,7 @@ describe("QuizContract", function () {
 		it("Contract should be successfully deployed", async function () {
 			accounts = await ethers.getSigners()
 			const QuizContract = await ethers.getContractFactory("QuizContract")
-			myQuizContract = await QuizContract.deploy(comission)
+			myQuizContract = await QuizContract.deploy(commission)
 			await myQuizContract.deployed()
 		
 			expect(myQuizContract.address).to.be.properAddress
@@ -560,8 +560,8 @@ describe("QuizContract", function () {
 		it("Account 1 starts the quiz", async function() {
 			quizOwner = accounts[1]
 
-			const ownersComission = Math.floor((comission * bid) / 100)
-			bank = bid - ownersComission
+			const ownersCommission = Math.floor((commission * bid) / 100)
+			bank = bid - ownersCommission
 			
 			const tx = await myQuizContract.connect(quizOwner).startQuiz(
 				guessingPeriod,

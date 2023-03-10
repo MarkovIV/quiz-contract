@@ -22,15 +22,15 @@ contract QuizContract {
         bool status; // game status: true - active (the game is active until the winner takes the pot), false - completed
     }
 
-    address public owner; // владелец контракта
-    uint256 private ownerBalance; // комиссия, которую может снять владелец контракта
-    uint256 public counter; // число созданных игр
-    uint8 public immutable comission; // процент комиссии (взимается со взносов игроков)
-    mapping(uint256 => Quiz) private quizes; // зарегистрированные игры
+    address public owner; // contract owner
+    uint256 private ownerBalance; // commission that can be removed by the owner of the contract
+    uint256 public counter; // quizes counter
+    uint8 public immutable commission; // commission percentage (charged from player contributions)
+    mapping(uint256 => Quiz) private quizes; // registered games
 
-    constructor(uint8 _comission) {
+    constructor(uint8 _commission) {
         owner = msg.sender;
-        comission = _comission;
+        commission = _commission;
     }
 
     function startQuiz(
@@ -50,9 +50,9 @@ contract QuizContract {
         quizes[counter].attemptCost = _attemptCost;
         quizes[counter].bid = msg.value;
 
-        uint256 ownersComission = (comission * msg.value) / 100;
-        ownerBalance += ownersComission;
-        quizes[counter].bank = msg.value - ownersComission;
+        uint256 ownersCommission = (commission * msg.value) / 100;
+        ownerBalance += ownersCommission;
+        quizes[counter].bank = msg.value - ownersCommission;
 
         quizes[counter].startedAt = block.timestamp;
         quizes[counter].status = true;
@@ -82,9 +82,9 @@ contract QuizContract {
         );
         require(msg.value == quizes[_quizID].attemptCost, "Wrong payment");
 
-        uint256 ownersComission = (comission * msg.value) / 100;
-        ownerBalance += ownersComission;
-        quizes[_quizID].bank += msg.value - ownersComission;
+        uint256 ownersCommission = (commission * msg.value) / 100;
+        ownerBalance += ownersCommission;
+        quizes[_quizID].bank += msg.value - ownersCommission;
 
         if (quizes[_quizID].responder == address(0))
             quizes[_quizID].responder = msg.sender;
@@ -181,6 +181,7 @@ contract QuizContract {
 
         uint256 bank = quizes[_quizID].bank;
         quizes[_quizID].bank = 0;
+        quizes[_quizID].winner = msg.sender;
         quizes[_quizID].status = false;
         payable(msg.sender).transfer(bank);
 
@@ -269,16 +270,16 @@ contract QuizContract {
         return quizes[_quizID].status;
     }
 
-    function showComission() public view onlyOwner returns (uint256) {
+    function showCommission() public view onlyOwner returns (uint256) {
         return ownerBalance;
     }
 
-    function withdrawComission() public onlyOwner {
-        uint256 ownerComission;
+    function withdrawCommission() public onlyOwner {
+        uint256 ownerCommission;
 
-        ownerComission = ownerBalance;
+        ownerCommission = ownerBalance;
         ownerBalance = 0;
-        payable(msg.sender).transfer(ownerComission);
+        payable(msg.sender).transfer(ownerCommission);
     }
 
     modifier onlyOwner() {
